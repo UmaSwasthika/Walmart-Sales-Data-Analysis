@@ -1,0 +1,107 @@
+-- ============================================================
+-- WALMART SALES DATA ANALYSIS
+-- Tool: DB Browser for SQLite
+-- Dataset: Walmart Store Sales (2010-2012) | Kaggle
+-- Tables: Sales (421,570 rows), stores (45 rows)
+-- Author: Chinthapally Uma Swasthika
+-- ============================================================
+
+
+-- ============================================================
+-- PHASE 1: DATA EXPLORATION
+-- ============================================================
+
+-- Q1: Preview the data
+SELECT * FROM Sales LIMIT 10;
+
+-- Q2: Total number of records
+SELECT COUNT(*) FROM Sales;
+-- Result: 421,571 rows
+
+-- Q3: How many unique stores?
+SELECT COUNT(DISTINCT Store) FROM Sales;
+-- Result: 45 stores
+
+-- Q4: Date range of the dataset
+SELECT MIN(Date), MAX(Date) FROM Sales;
+-- Result: 2010-02-05 to 2012-10-26 (approx. 3 years)
+
+
+-- ============================================================
+-- PHASE 2: STORE PERFORMANCE ANALYSIS
+-- ============================================================
+
+-- Q5: Top 10 stores by total sales
+SELECT Store, 
+       ROUND(SUM(Weekly_Sales), 2) AS Total_Sales
+FROM Sales
+GROUP BY Store
+ORDER BY Total_Sales DESC
+LIMIT 10;
+-- Insight: Store 20 leads with $301M in total sales
+
+-- Q6: Top 10 stores with store type and size (JOIN)
+SELECT s.Store, s.Type, s.Size, 
+       ROUND(SUM(sal.Weekly_Sales), 2) AS Total_Sales
+FROM Sales sal
+JOIN stores s ON sal.Store = s.Store
+GROUP BY s.Store
+ORDER BY Total_Sales DESC
+LIMIT 10;
+-- Insight: Store 10 (Type B, smaller size) ranks 6th — 
+--          high sales per square foot, outperforms larger stores
+
+-- Q7: Average weekly sales by store type
+SELECT s.Type, 
+       ROUND(AVG(sal.Weekly_Sales), 2) AS Avg_Weekly_Sales,
+       COUNT(DISTINCT s.Store) AS Num_Stores
+FROM Sales sal
+JOIN stores s ON sal.Store = s.Store
+GROUP BY s.Type
+ORDER BY Avg_Weekly_Sales DESC;
+-- Result: A=$20,099 | B=$12,237 | C=$9,519
+-- Insight: Type A stores average 2x more weekly sales than Type C
+
+
+-- ============================================================
+-- PHASE 3: HOLIDAY IMPACT ANALYSIS
+-- ============================================================
+
+-- Q8: Do holiday weeks drive higher sales?
+SELECT IsHoliday,
+       ROUND(AVG(Weekly_Sales), 2) AS Avg_Sales,
+       COUNT(*) AS Num_Weeks
+FROM Sales
+GROUP BY IsHoliday;
+-- Result: Non-holiday=$15,901 | Holiday=$17,035
+-- Insight: Holiday weeks generate ~7% higher average sales
+
+
+-- ============================================================
+-- PHASE 4: DEPARTMENT PERFORMANCE
+-- ============================================================
+
+-- Q9: Top 10 departments by total sales
+SELECT Dept,
+       ROUND(SUM(Weekly_Sales), 2) AS Total_Sales
+FROM Sales
+GROUP BY Dept
+ORDER BY Total_Sales DESC
+LIMIT 10;
+-- Result: Dept 92 ($483M) and Dept 95 ($449M) dominate
+-- Insight: High-volume consumable departments drive overall revenue
+
+
+-- ============================================================
+-- PHASE 5: YEARLY SALES TREND
+-- ============================================================
+
+-- Q10: Year-over-year sales trend
+SELECT SUBSTR(Date, 1, 4) AS Year,
+       ROUND(SUM(Weekly_Sales), 2) AS Total_Sales
+FROM Sales
+GROUP BY Year
+ORDER BY Year;
+-- Result: 2010=$2.29B | 2011=$2.45B | 2012=$2.00B*
+-- *2012 is partial data (Jan-Oct only), not a real decline
+-- Insight: Sales grew ~7% from 2010 to 2011
